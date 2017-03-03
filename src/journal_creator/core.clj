@@ -1,5 +1,5 @@
 (ns journal-creator.core
-  (:gen-class))
+  (require [clj-time.core :as t]))
 
 (def days {0 "Saturday"
            1 "Sunday"
@@ -40,7 +40,6 @@
   (get days (zeller-congruence y m d) "Unknown"))
 
 (defn -main
-  "I don't do a whole lot ... yet."
   [& args]
   (println "Today is: " (get-day-of-week 2017 03 01) (calculate-zeller-congruence 2017 03 01))
   (println (zeller-congruence 2017 02 28)))
