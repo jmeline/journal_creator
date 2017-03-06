@@ -1,5 +1,7 @@
 (ns journal-creator.core
-  (require [clj-time.core :as t]))
+  (require [clj-time.core :as t]
+           [clj-time.local :as l]
+           [clj-time.format :as f]))
 
 (def days {0 "Saturday"
            1 "Sunday"
@@ -39,7 +41,19 @@
 (defn get-day-of-week [y m d]
   (get days (zeller-congruence y m d) "Unknown"))
 
+(defn unparse-today [formatter]
+  (f/unparse formatter (t/to-time-zone (t/now) (t/default-time-zone))))
+
+(defn custom-formatter [format] (f/formatter-local format))
+(def get-journal-header (comp #(str "= " %1 " - <SUMMARY GOES HERE> =") unparse-today custom-formatter)) 
+(def journal-format "MMMM dd, yyyy, EEEE")
+
 (defn -main
   [& args]
-  (println "Today is: " (get-day-of-week 2017 03 01) (calculate-zeller-congruence 2017 03 01))
-  (println (zeller-congruence 2017 02 28)))
+  ; (println "Today is: " (get-today (custom-formatter journal-format)))
+  (println "Today is: " (get-journal-header journal-format))
+  (loop [i (read-line)]
+    (println "row " i)
+    (if (= i "bye")
+      (println "All done!")
+      (recur (read-line))))) 
