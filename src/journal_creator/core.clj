@@ -1,7 +1,8 @@
 (ns journal-creator.core
-  (require [clj-time.core :as t]
-           [clj-time.local :as l]
-           [clj-time.format :as f]))
+  (require [clj-time.core     :as t]
+           [clj-time.local    :as l]
+           [clj-time.periodic :as p]
+           [clj-time.format   :as f]))
 
 (def days {0 "Saturday"
            1 "Sunday"
@@ -41,19 +42,75 @@
 (defn get-day-of-week [y m d]
   (get days (zeller-congruence y m d) "Unknown"))
 
-(defn unparse-today [formatter]
-  (f/unparse formatter (t/to-time-zone (t/now) (t/default-time-zone))))
+(defn time-range
+  [start end step]
+  (let [inf-range (p/periodic-seq start step)
+        below-end? (fn [t] (t/within? (t/interval start end) t))]
+    (take-while below-end? inf-range)))
 
-(defn custom-formatter [format] (f/formatter-local format))
-(def get-journal-header (comp #(str "= " %1 " - <SUMMARY GOES HERE> =") unparse-today custom-formatter)) 
-(def journal-format "MMMM dd, yyyy, EEEE")
+(defn month-seq 
+  [start end step]
+  (time-range start end step))
+
+(defn number-of-days-in-month
+  [year month]
+  (let [current-date (t/date-time year month)
+        end-date     (t/plus current-date (t/months 1))]
+    (month-seq current-date end-date (t/days 1))))
+
+(def journal-format (fn [] "MMMM dd, yyyy, EEEE"))
+(def filename-date-format "yyyy-MM-dd")
+
+(defn get-today [] 
+  (t/to-time-zone (t/now) (t/default-time-zone))) 
+
+(defn unparse-today [formatter]
+  (f/unparse formatter (get-today)))
+
+(defn custom-formatter [format] 
+  (f/formatter-local format))
+
+(defn journal-header-format [date] 
+  (str "= " date " - <SUMMARY GOES HERE> ="))
+
+(defn file-format [file]
+  (str file ".wiki"))
+
+(defn add-x-days-to-today [x]
+  (t/plus (get-today) (t/days x)))
+
+(defn get-journal-header [date]
+  (journal-header-format (f/unparse (f/formatter-local  "MMMM dd, yyyy, EEEE") date )))
+
+;; (def get-journal-header 
+  ;; (comp journal-header-format unparse-today custom-formatter)) 
+
+(def get-filename
+  (comp file-format unparse-today custom-formatter))
 
 (defn -main
   [& args]
-  ; (println "Today is: " (get-today (custom-formatter journal-format)))
-  (println "Today is: " (get-journal-header journal-format))
-  (loop [i (read-line)]
-    (println "row " i)
+  (println "Today is: " (get-journal-header (get-today)))
+  ;; (println "file format is: " (get-filename filename-date-format))
+  ;; (spit (get-filename filename-date-format) (get-journal-header journal-format))
+  ;; (loop [i 1]
+    ;; (println (add-x-days-to-today i)) 
+    ;; (if (< i 10)
+      ;; (recur (inc i))))
+ (prn "time-range")
+ (loop [days (number-of-days-in-month 2017 03)] 
+   (when (not (empty? days))
+     (let [day (first days)
+           journal-header (get-journal-header day)
+           ;; filename (formate-date file-format day)
+           ]
+       (prn "remaining:" (count days) "journal-header: " journal-header)
+       ;; (prn "filename: " filename)
+       ;; (spit filename journal-header)
+       (recur (rest days)))))
+
+ (loop [i (read-line)]
+    (println "row " (type i) i)
     (if (= i "bye")
       (println "All done!")
       (recur (read-line))))) 
