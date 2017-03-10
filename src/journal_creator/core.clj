@@ -58,8 +58,6 @@
         end-date     (t/plus current-date (t/months 1))]
     (month-seq current-date end-date (t/days 1))))
 
-(def journal-format (fn [] "MMMM dd, yyyy, EEEE"))
-(def filename-date-format "yyyy-MM-dd")
 
 (defn get-today [] 
   (t/to-time-zone (t/now) (t/default-time-zone))) 
@@ -76,41 +74,31 @@
 (defn file-format [file]
   (str file ".wiki"))
 
-(defn add-x-days-to-today [x]
-  (t/plus (get-today) (t/days x)))
+(def journal-format "MMMM dd, yyyy, EEEE")
+(defn convert-to-journal-header [date]
+  (f/unparse (custom-formatter journal-format) date))
+
+(def filename-date-format "yyyy-MM-dd")
+(defn convert-to-filename-extension [date]
+  (f/unparse (custom-formatter filename-date-format) date))
 
 (defn get-journal-header [date]
-  (journal-header-format (f/unparse (f/formatter-local  "MMMM dd, yyyy, EEEE") date )))
+  (journal-header-format (convert-to-journal-header date)))
 
-;; (def get-journal-header 
-  ;; (comp journal-header-format unparse-today custom-formatter)) 
-
-(def get-filename
-  (comp file-format unparse-today custom-formatter))
-
+(defn get-filename-extension [date]
+  (file-format (convert-to-filename-extension date)))
+ 
 (defn -main
   [& args]
   (println "Today is: " (get-journal-header (get-today)))
-  ;; (println "file format is: " (get-filename filename-date-format))
-  ;; (spit (get-filename filename-date-format) (get-journal-header journal-format))
-  ;; (loop [i 1]
-    ;; (println (add-x-days-to-today i)) 
-    ;; (if (< i 10)
-      ;; (recur (inc i))))
- (prn "time-range")
- (loop [days (number-of-days-in-month 2017 03)] 
-   (when (not (empty? days))
-     (let [day (first days)
-           journal-header (get-journal-header day)
-           ;; filename (formate-date file-format day)
-           ]
-       (prn "remaining:" (count days) "journal-header: " journal-header)
-       ;; (prn "filename: " filename)
-       ;; (spit filename journal-header)
-       (recur (rest days)))))
+  (println "file format is: " (get-filename-extension (get-today)))
+  (loop [days (number-of-days-in-month 2017 03)] 
+    (when (seq days)
+      (let [day (first days)
+            journal-header (get-journal-header day)
+            filename (get-filename-extension day)]
+        (prn "remaining:" (count days) "journal-header: " journal-header)
+        (prn "filename: " filename)
+        (spit filename journal-header)
+        (recur (rest days))))))
 
- (loop [i (read-line)]
-    (println "row " (type i) i)
-    (if (= i "bye")
-      (println "All done!")
-      (recur (read-line))))) 
