@@ -1,20 +1,35 @@
 (ns journal-creator.core-test
   (:require [clojure.test :refer :all]
-            [journal-creator.core :refer :all]))
+            [journal-creator.core :refer :all]
+            [clj-time.core :as t]))
 
-(deftest verify-day
-  (testing "converting january and february to 13 and 14 respectively"
-    (is (= 13 (convert-month 01)))
-    (is (= 14 (convert-month 02)))
-    (is (= 03 (convert-month 03))))
+(deftest verify-utility-functions
+  (testing "test get-journal-header return correct headers"
+    (is (= (get-journal-header (t/date-time 2017 03 18))
+           "= March 18, 2017, Saturday - <SUMMARY GOES HERE> =" ))
+    (is (= (get-journal-header (t/date-time 2017 03))
+           "= March 01, 2017, Wednesday - <SUMMARY GOES HERE> =" ))
+    (is (= (get-journal-header (t/date-time 2017 12 18))
+           "= December 18, 2017, Monday - <SUMMARY GOES HERE> =" )))
 
-  (testing "Given a date, return a day of the week."
-    (is (= "Monday"  (get-day-of-week 2014 3 3)))
-    (is (= "Tuesday" (get-day-of-week 2011 8 2)))
-    (is (= "Wednesday"(get-day-of-week 2017 3 1)))
-    (is (= "Thursday" (get-day-of-week 2015 2 1)))
-    (is (= "Friday" (get-day-of-week 2013 3 29)))
-    (is (= "Sunday" (get-day-of-week 2012 3 18)))
-    (is (= "Saturday" (get-day-of-week 2017 23 1)))
-    (is (= "Sunday" (get-day-of-week 2015 4 26)))
-    (is (= "Sunday" (get-day-of-week 2010 3 21)))))
+  (testing "test get-filename-extension returns correct format"
+    (is (= (get-filename-extension (t/date-time 2017 3 18))  "2017-03-18.wiki"))
+    (is (= (get-filename-extension (t/date-time 2014 2 8))   "2014-02-08.wiki"))
+    (is (= (get-filename-extension (t/date-time 2027 1 1))   "2027-01-01.wiki"))
+    (is (= (get-filename-extension (t/date-time 2017 12 14)) "2017-12-14.wiki")))
+
+  (testing "test days-in-month returns correct count of days in the month"
+    (is (= (count (days-in-month 2017 1)) 31))
+    (is (= (count (days-in-month 2017 2)) 28))
+    (is (= (count (days-in-month 2017 3)) 31))
+    (is (= (count (days-in-month 2017 4)) 30))
+    (is (= (count (days-in-month 2017 5)) 31))
+    (is (= (count (days-in-month 2017 6)) 30))
+    (is (= (count (days-in-month 2017 7)) 31))
+    (is (= (count (days-in-month 2017 8)) 31))
+    (is (= (count (days-in-month 2017 9)) 30))
+    (is (= (count (days-in-month 2017 10)) 31))
+    (is (= (count (days-in-month 2017 11)) 30))
+    (is (= (count (days-in-month 2017 12)) 31))
+))
+
