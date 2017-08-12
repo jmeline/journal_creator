@@ -10,53 +10,35 @@
         below-end? (fn [t] (t/within? (t/interval start end) t))]
     (take-while below-end? inf-range)))
 
-(defn days-in-month
-  ([year month] (days-in-month year month 01))
-  ([year month day]
-   (let [current-date (t/date-time year month day)
-         end-date     (t/plus current-date (t/months 1))]
-     (time-range current-date end-date (t/days 1)))))
-
 (defn get-today []
   (t/to-time-zone (t/now) (t/default-time-zone)))
 
-(defn unparse-today [formatter]
-  (f/unparse formatter (get-today)))
+(defn parse-date [date format]
+  (f/unparse (f/formatter-local format) date))
 
-(defn journal-header-format [date]
-  (str "= " date " - <SUMMARY GOES HERE> ="))
+(defn get-journal-header-str [date]
+  (-> 
+    date
+    #(parse-date % "MMMM dd, yyyy, EEEE") 
+    #(str "= " % " - <SUMMARY GOES HERE> =")))
 
-(defn file-format [file]
-  (str file ".wiki"))
+(defn get-filename-extension-str [date]
+  (-> 
+    date
+    #(parse-date "yyyy-MM-dd" %)
+    #(str % ".wiki")))
 
-(defn convert-to-journal-header [date]
-  (f/unparse (f/formatter-local "MMMM dd, yyyy, EEEE") date))
+(defn save [day] 
+  (let [filename (get-filename-extension-str day)
+        header (get-journal-header-str day)] 
+    (spit filename header)))
 
-(defn convert-to-filename-extension [date]
-  (f/unparse (f/formatter-local "yyyy-MM-dd") date))
-
-(defn get-journal-header-str [day]
-  ((comp journal-header-format convert-to-journal-header) day))
-
-(defn get-filename-extension-str [day]
-  ((comp file-format convert-to-filename-extension) day))
-
-;; incrediblepoems.com - heaven wont be heaven
-
-(defn generate-journal-files
-  ([year month] (generate-journal-files year month 01))
-  ([year month d]
-   (loop [days (days-in-month year month d)]
-     (when (seq days)
-       (let [day (first days)
-             journal-header (get-journal-header-str day)
-             filename (get-filename-extension-str day)]
-         (prn "remaining:" (count days) "journal-header: " journal-header "filename: " filename)
-         (spit filename journal-header)
-         (recur (rest days)))))))
+(defn iterate-times [times]
+  (let [current-date (get-today)]
+  (map #(save %) 
+       (time-range current-date
+                   (t/plus current-date (t/days times)) (t/days 1)))))
 
 (defn -main [& args]
-  ;; (println "Today is: " (get-journal-header-str (get-today)))
-  ;; (println "file format is: " (get-filename-extension-str (get-today)))
   (prn "args: " args)
-  (generate-journal-files 2017 07 04))
+  (iterate-times (read-string (first args)))) 
