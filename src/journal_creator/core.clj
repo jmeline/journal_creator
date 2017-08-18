@@ -15,25 +15,26 @@
 (defn parse-date-generator [date]
   (fn [format] (f/unparse (f/formatter-local format) date)))
 
-(defn get-journal-header-str [date-parser]
-  (-> (date-parser "MMMM dd, yyyy, EEEE") 
-      #(str "= " % " - <SUMMARY GOES HERE> =")))
+(defn get-journal-header [date-parser]
+   (-> "MMMM dd, yyyy, EEEE"
+       date-parser
+       (#(str "= " % " - <SUMMARY GOES HERE> =")))) 
 
-(defn get-filename-extension-str [date-parser]
-  (-> (date-parser "yyyy-MM-dd")
-      #(str % ".wiki")))
+(defn get-file-extension [date-parser]
+  (->  "yyyy-MM-dd" 
+       date-parser 
+       (#(str % ".wiki"))))
 
-(defn save [day] 
+(defn save [day]
   (let [date-parser-function (parse-date-generator day)
-        filename (get-filename-extension-str date-parser-function)
-        header (get-journal-header-str date-parser-function)] 
+        filename (get-file-extension date-parser-function)
+        header (get-journal-header date-parser-function)]
     (spit filename header)))
 
 (defn iterate-times [times]
   (let [current-date (get-today)]
-    (map #(save %) 
-         (time-range current-date
-                     (t/plus current-date (t/days times)) (t/days 1)))))
+    (doseq [day (time-range current-date (t/plus current-date (t/days times)) (t/days 1))]
+      (save day))))
 
-(defn -main [& args] 
-  (iterate-times (read-string (first args)))) 
+(defn -main [& args]
+  (iterate-times (read-string (first args))))

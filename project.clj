@@ -1,6 +1,6 @@
 (defproject journal_creator "0.1.0-SNAPSHOT"
   :description "Creates journal headers for vimwiki"
-  :url "http://example.com/FIXME"
+  :url "github.com/jmeline/journal_creator"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
